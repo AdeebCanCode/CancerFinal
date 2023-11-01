@@ -1,10 +1,22 @@
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from keras.models import load_model
 from keras.preprocessing import image
 from keras.applications.vgg16 import preprocess_input
 import numpy as np
 
 app = FastAPI()
+
+# CORS configuration
+origins = ["*"]  # Allow requests from any origin during development. In production, replace this with the specific origins.
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Load your Keras model
 model = load_model('model_vgg19.h5')
@@ -43,5 +55,3 @@ async def predict_image(file: UploadFile):
     normal = float(normal)
     
     return {"prediction": prediction, "malignant_prob": malignant, "normal_prob": normal}
-
-# to run the code use this command python -m uvicorn aa:app --reload  
