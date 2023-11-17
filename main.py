@@ -53,11 +53,18 @@ async def predict_image(file: UploadFile):
     malignant = float(malignant)
     normal = float(normal)
     
-    return {"prediction": prediction, "malignant_prob": malignant, "normal_prob": normal}
+    # Create a JSONResponse with an explicit 'Access-Control-Allow-Origin' header
+    response = JSONResponse(
+        content={"prediction": prediction, "malignant_prob": malignant, "normal_prob": normal},
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
+    
+    return response
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": exc.detail},
+        headers={"Access-Control-Allow-Origin": "*"}
     )
