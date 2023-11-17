@@ -1,6 +1,4 @@
-from fastapi import FastAPI, UploadFile, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse
+from fastapi import FastAPI, UploadFile
 from keras.models import load_model
 from keras.preprocessing import image
 from keras.applications.vgg16 import preprocess_input
@@ -45,23 +43,3 @@ async def predict_image(file: UploadFile):
     normal = float(normal)
     
     return {"prediction": prediction, "malignant_prob": malignant, "normal_prob": normal}
-
-# Error Handling
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request, exc):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.detail},
-    )
-
-# CORS Configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Add your frontend URL
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# to run the code use this command python -m uvicorn your_filename:app --reload
-e this command python -m uvicorn aa:app --reload  
