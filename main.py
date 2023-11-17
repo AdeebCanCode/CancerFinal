@@ -1,11 +1,21 @@
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from keras.models import load_model
 from keras.preprocessing import image
 from keras.applications.vgg16 import preprocess_input
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import numpy as np
 
 app = FastAPI()
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins, "*" can be replaced with your specific frontend URL in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Load your Keras model
 model = load_model('model_vgg19.h5')
@@ -45,11 +55,9 @@ async def predict_image(file: UploadFile):
     
     return {"prediction": prediction, "malignant_prob": malignant, "normal_prob": normal}
 
-# CORS Configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins, "*" can be replaced with your specific frontend URL in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.detail},
+    )
