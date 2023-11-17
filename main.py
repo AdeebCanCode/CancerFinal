@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile
 from keras.models import load_model
 from keras.preprocessing import image
 from keras.applications.vgg16 import preprocess_input
+from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 
 app = FastAPI()
@@ -43,3 +44,12 @@ async def predict_image(file: UploadFile):
     normal = float(normal)
     
     return {"prediction": prediction, "malignant_prob": malignant, "normal_prob": normal}
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins, "*" can be replaced with your specific frontend URL in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
