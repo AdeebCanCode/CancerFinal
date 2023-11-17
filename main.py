@@ -1,30 +1,27 @@
-from fastapi import FastAPI, UploadFile, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, UploadFile
 from keras.models import load_model
 from keras.preprocessing import image
-from keras.applications.vgg16 import preprocess_input
-from fastapi.responses import JSONResponse
+from keras.applications.vgg19 import preprocess_input
 import numpy as np
+import tensorflow as tf
 
 app = FastAPI()
 
-# CORS Configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins, "*" can be replaced with your specific frontend URL in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Lazy loading of the model during startup
+model = None
 
-# Load your Keras model
-model = load_model('model_vgg19.h5')
+def load_keras_model():
+    global model
+    if model is None:
+        model = load_model('model_vgg19.h5')
 
-def predict(image_path):
-    img = image.load_img(image_path, target_size=(224, 224))
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-    img_data = preprocess_input(x)
+# Predict function with image resizing and direct processing
+def predict(img_data):
+    load_keras_model()
+    
+    img = image.img_to_array(img_data)
+    img = np.expand_dims(img, axis=0)
+    img_data = preprocess_input(img)
     classes = model.predict(img_data)
     malignant = float(classes[0, 0])  # Convert to float
     normal = float(classes[0, 1])     # Convert to float
@@ -33,38 +30,20 @@ def predict(image_path):
 
 @app.post("/predict/")
 async def predict_image(file: UploadFile):
-    # Save the uploaded image temporarily
-    with open("temp_image.jpg", "wb") as temp_image:
-        temp_image.write(file.file.read())
+    # Read image file directly without saving
+    contents = await file.read()
+    img_data = image.load_img(io.BytesIO(contents), target_size=(224, 224))
     
-    # Perform prediction on the saved image
-    malignant, normal = predict("temp_image.jpg")
+    # Perform prediction on the image data
+    malignant, normal = predict(img_data)
     
-    # Clean up the temporary image file
-    import os
-    os.remove("temp_image.jpg")
+    # Convert NumPy floats to Python floats
+    malignant = float(malignant)
+    normal = float(normal)
     
     if malignant > normal:
         prediction = 'malignant'
     else:
         prediction = 'normal'
     
-    # Convert NumPy floats to Python floats
-    malignant = float(malignant)
-    normal = float(normal)
-    
-    # Create a JSONResponse with an explicit 'Access-Control-Allow-Origin' header
-    response = JSONResponse(
-        content={"prediction": prediction, "malignant_prob": malignant, "normal_prob": normal},
-        headers={"Access-Control-Allow-Origin": "*"}
-    )
-    
-    return response
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request, exc):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.detail},
-        headers={"Access-Control-Allow-Origin": "*"}
-    )
+    return {"prediction": prediction, "malignant_prob": malignant, "normal_prob": normal}
