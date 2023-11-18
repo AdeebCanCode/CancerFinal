@@ -4,6 +4,7 @@ from keras.preprocessing import image
 from keras.applications.vgg19 import preprocess_input
 import numpy as np
 import tensorflow as tf
+import io  # Add this line to import the io module
 
 app = FastAPI()
 
