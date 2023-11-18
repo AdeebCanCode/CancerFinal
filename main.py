@@ -22,10 +22,10 @@ def predict(img_data):
     return malignant, normal
 
 @app.post("/predict/")
- def predict_image(file: UploadFile):
+def predict_image(file: UploadFile):
     # Read image file directly without saving
-    contents = await file.read()
-    img_data = image.load_img(io.BytesIO(contents), target_size=(224, 224))
+    contents = file.file.read()
+    img_data = image.img_to_array(image.load_img(io.BytesIO(contents), target_size=(224, 224)))
     
     # Perform prediction on the image data
     malignant, normal = predict(img_data)
