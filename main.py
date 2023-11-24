@@ -8,6 +8,11 @@ import io
 
 app = FastAPI()
 
+CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 # Load the model during startup
 model = load_model('model_vgg19.h5')
 
@@ -21,7 +26,7 @@ def predict(img_data):
     normal = float(classes[0, 1])     # Convert to float
     return malignant, normal
 
-@app.post("/predict/")
+@app.post("/predict")
 def predict_image(file: UploadFile):
     # Read image file directly without saving
     contents = file.file.read()
